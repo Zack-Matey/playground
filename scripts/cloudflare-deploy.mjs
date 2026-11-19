@@ -23,7 +23,16 @@ for (const f of files) {
   if (state[key] === f.sha256) continue;
   const src = path.join(root, "out-large", key);
   if (!existsSync(src)) throw new Error(`${key} changed but out-large/ has no compressed copy. Rebuild${local ? " with --local" : ""}.`);
-  wrangler(["r2", "object", "put", `${BUCKET}/${key}`, `--file=${src}`, `--content-type=${f.contentType}`, local ? "--local" : "--remote"]);
+  // Uploads occasionally fail on the network ("fetch failed"); retry before giving up. Progress is saved per file.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      wrangler(["r2", "object", "put", `${BUCKET}/${key}`, `--file=${src}`, `--content-type=${f.contentType}`, local ? "--local" : "--remote"]);
+      break;
+    } catch (e) {
+      if (attempt === 4) throw e;
+      console.log(`  retrying ${key} (attempt ${attempt + 1} of 4)`);
+    }
+  }
   state[key] = f.sha256;
   writeFileSync(stateFile, JSON.stringify(state, null, 1) + "\n");
   sent++;

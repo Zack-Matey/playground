@@ -513,7 +513,7 @@ fn main() {
     engine: "java",
     how: "javac 25 and TeaVM compiled to WebAssembly; your program becomes WebAssembly GC",
     download: "≈ 4 MB",
-    color: "#E76F00",
+    color: "#5382A1",
     experimental: true,
     noStdin: "Java programs can't read stdin here: TeaVM's WebAssembly class library has no console input.",
     examples: [
