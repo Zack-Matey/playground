@@ -1,0 +1,36 @@
+// Cloudflare deploy for playground.zackmatey.com: a static export (out/) on Workers static assets, plus a small Worker
+// (worker/index.ts) that serves the language engines from R2, pre-compressed with brotli. No request ever runs user
+// code on a server: programs run in the visitor's browser. Build: npm run cf:build. Deploy: npm run cf:deploy.
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "playground",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-01",
+	"assets": {
+		"directory": "./out",
+		"binding": "ASSETS",
+		// /python serves out/python.html, and unknown paths get the site's own 404 page.
+		"html_handling": "auto-trailing-slash",
+		"not_found_handling": "404-page",
+		// Only engine downloads run the Worker; everything else is served straight from the static assets.
+		"run_worker_first": ["/engines/*"]
+	},
+	"r2_buckets": [
+		{
+			"binding": "ENGINES",
+			"bucket_name": "playground-engines"
+		}
+	],
+	"routes": [
+		{
+			"pattern": "playground.zackmatey.com",
+			"custom_domain": true
+		}
+	],
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	}
+}
