@@ -44,7 +44,10 @@ ws.addEventListener("message", (e) => {
   const m = JSON.parse(e.data);
   if (m.id && pending.has(m.id)) (pending.get(m.id)(m), pending.delete(m.id));
   if (m.method === "Runtime.exceptionThrown") errors.push(m.params.exceptionDetails.exception?.description?.split("\n")[0] ?? m.params.exceptionDetails.text);
-  if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/favicon|Failed to load resource/i.test(m.params.entry.text)) errors.push(m.params.entry.text.slice(0, 300));
+  // The python case that checks workers can't reach the analytics endpoint causes exactly one expected violation.
+  const expected = /Connecting to 'https:\/\/cloudflareinsights\.com\/cdn-cgi\/rum' violates the following Content Security Policy directive: "connect-src 'self'"/;
+  if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/favicon|Failed to load resource/i.test(m.params.entry.text) && !expected.test(m.params.entry.text))
+    errors.push(m.params.entry.text.slice(0, 300));
   if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") errors.push(m.params.args.map((a) => a.value ?? a.description).join(" ").slice(0, 300));
 });
 const send = (method, params = {}, ms = 300000) =>
@@ -76,6 +79,12 @@ const CASES = {
   python: [
     { code: "import sys\nprint('hi', sum(range(10)))\nname = input()\nprint('name=' + name)\nsys.exit(3)", stdin: "ada\n", out: "hi 45\nname=ada\n", exit: 3 },
     { code: "1/0", exit: 1, err: /ZeroDivisionError/ },
+    // The page CSP allows Cloudflare Web Analytics; the runner workers' CSP must not (config/security.ts).
+    {
+      code: 'import js\nx = js.XMLHttpRequest.new()\nx.open("POST", "https://cloudflareinsights.com/cdn-cgi/rum", False)\nx.send("{}")\nprint("reached", x.status)',
+      exit: 1,
+      err: /NetworkError|Failed to execute 'send'/,
+    },
   ],
   javascript: [
     { code: "console.log('hi', [1,2], {a: 1});\nawait new Promise(r => setTimeout(r, 50));\nconsole.log(readline());", stdin: "line1\n", out: "hi [ 1, 2 ] { a: 1 }\nline1\n", exit: 0 },

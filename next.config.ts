@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import { ENGINE_CACHE } from "./config/engines";
-import { securityHeaders } from "./config/security";
+import { securityHeaders, workerSecurityHeaders } from "./config/security";
 
 const dev = process.env.NODE_ENV !== "production";
 // EXPORT=1 builds the static site for Cloudflare (scripts/cloudflare-build.mjs): plain HTML/JS in out/, no server.
@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
         async headers() {
           return [
             { source: "/:path*", headers: securityHeaders(dev) },
+            { source: "/_next/static/:path*", headers: workerSecurityHeaders(dev) },
             { source: "/engines/:path*", headers: [{ key: "Cache-Control", value: ENGINE_CACHE }] },
             // The service worker must always be revalidated, or users could be stuck on an old version.
             { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }, { key: "Service-Worker-Allowed", value: "/" }] },

@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
-import { securityHeaders } from "../config/security.ts";
+import { securityHeaders, workerSecurityHeaders } from "../config/security.ts";
 import { ENGINE_CACHE } from "../config/engines.ts";
 
 const root = path.resolve(import.meta.dirname, "..");
@@ -33,7 +33,8 @@ writeFileSync(
   path.join(out, "_headers"),
   [
     block("/*", securityHeaders(false)),
-    block("/_next/static/*", [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }]),
+    // Cloudflare joins a header set by two matching rules with a comma: two CSPs, both enforced (see config/security.ts).
+    block("/_next/static/*", [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }, ...workerSecurityHeaders(false)]),
     block("/sw.js", [{ key: "Cache-Control", value: "no-cache" }, { key: "Service-Worker-Allowed", value: "/" }]),
   ].join("\n"),
 );

@@ -80,7 +80,7 @@ export default function Page() {
       <p>
         Every program runs in a Web Worker, inside a WebAssembly engine, never on the page itself. JavaScript too: it runs in QuickJS, a separate
         JavaScript engine compiled to wasm, so your code can&apos;t touch the page, your cookies or the network. The site&apos;s Content Security Policy
-        only allows connections to this site, as a second wall. Stop terminates the worker, which ends even an infinite loop.
+        lets the workers that run your code connect only to this site, as a second wall. Stop terminates the worker, which ends even an infinite loop.
       </p>
       <p>
         The site is cross-origin isolated (the <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code> headers), which is
@@ -89,7 +89,8 @@ export default function Page() {
 
       <h2 className={H}>Privacy</h2>
       <p>
-        No accounts, no ads, no cookies. Your code and stdin are kept in this browser&apos;s local storage so they&apos;re there next time, and never sent
+        No accounts, no ads, no cookies. The pages load Cloudflare Web Analytics, which counts visits without cookies or fingerprinting; it runs on
+        the page only, never in the workers that run your code, and doesn&apos;t see what you write. Your code and stdin are kept in this browser&apos;s local storage so they&apos;re there next time, and never sent
         anywhere. A share link puts the code in the URL&apos;s fragment (after the #), which browsers don&apos;t send to servers: the snippet exists only in the
         link. Engine downloads appear in Cloudflare&apos;s request logs like any other file.
       </p>

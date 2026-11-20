@@ -58,7 +58,7 @@ npm run cf:deploy    # build to out/, upload new/changed engine files to R2, wra
 
 To try the Cloudflare build locally first: `npm run cf:dev` (`wrangler dev` with a local R2 copy) at http://localhost:8787.
 
-In the Cloudflare dashboard, keep features that inject scripts switched off for this hostname: Rocket Loader, Email Address Obfuscation and automatic Web Analytics. The CSP blocks injected scripts (and COEP blocks cross-origin ones).
+In the Cloudflare dashboard, keep features that inject scripts switched off for this hostname: Rocket Loader and Email Address Obfuscation. The CSP blocks injected scripts (and COEP blocks cross-origin ones). The exception is Cloudflare Web Analytics, which the zone injects on every hostname (excluding one needs a paid plan): the page CSP allows it, and `/_next/static/*`, which includes the runner workers, gets a second CSP without it, so code running a program still can't connect anywhere but this site.
 
 ## Layout
 
@@ -87,7 +87,7 @@ In the Cloudflare dashboard, keep features that inject scripts switched off for 
 ## Design decisions
 
 - **Real toolchains, not lookalikes.** Go uses the gc compiler and linker themselves, Rust uses rustc with LLVM, C/C++ use Clang. Errors, warnings and behavior match what you'd get locally.
-- **The browser is the sandbox.** Programs run in WebAssembly inside a Web Worker. JavaScript runs in QuickJS (wasm), not the page's engine, so snippets can't reach the DOM, storage or network. The CSP (`connect-src 'self'`) is the outer wall, and no `unsafe-eval` is allowed in production.
+- **The browser is the sandbox.** Programs run in WebAssembly inside a Web Worker. JavaScript runs in QuickJS (wasm), not the page's engine, so snippets can't reach the DOM, storage or network. The CSP (`connect-src 'self'` for the workers; pages also allow Cloudflare Web Analytics) is the outer wall, and no `unsafe-eval` is allowed in production.
 - **Our own WASI host** (`app/run/wasi/`) over an in-memory filesystem, used by the Go toolchain, rustc and every compiled program. Threads (for rustc) run one Worker per wasm thread on a shared memory. The host worker owns the filesystem and is never blocked, so it answers syscalls and spawns threads; signalling uses `postMessage` + `Atomics.wait`, not `Atomics.waitAsync`, so it works in every browser with SharedArrayBuffer.
 - **Linking Rust without subprocesses.** rustc can't spawn a linker under WASI, so it runs with `--print link-args -C save-temps`, and we hand that exact command to wasm-ld from the Clang engine. This rustc is built with `panic=abort`, so it ends a failed compile by trapping after printing its errors; the runner treats that as exit 1.
 - **Java without eval.** TeaVM's own JS glue builds its interop helpers with `new Function`, which the CSP forbids, so `app/run/langs/teavm.ts` is a port of it that uses closures instead. The one real use of JS source, `@JSBody`, is resolved from a fixed table of the snippets the compiler and TeaVM's class library contain; any other snippet (a user's own `@JSBody`) is refused, so Java programs only ever run as WebAssembly. A generated launcher wraps `main` so uncaught exceptions print as the JVM prints them. Known gaps in this TeaVM build: no stdin, no `System.exit`, floating-point formatting (`%f`, `DecimalFormat`) fails, and null/bounds/zero-division errors are WebAssembly traps that Java can't catch. `node scripts/dev/teavm-probe.mjs File.java` drives the engine from Node.
