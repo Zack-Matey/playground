@@ -147,6 +147,22 @@ try {
     }
   }
 
+  // Home: the inline script picks the start language before first paint, and hydration keeps that pick.
+  if (!only || only.includes("ui")) {
+    const stable = [["python", "Python"], ["javascript", "JavaScript"], ["typescript", "TypeScript"], ["c", "C"], ["cpp", "C++"], ["go", "Go"]].map(([id, name]) => ({ id, name }));
+    const seen = new Set();
+    let consistent = true;
+    for (let i = 0; i < 8; i++) {
+      await send("Page.navigate", { url: `${base}/` });
+      await sleep(1500);
+      const r = await evaluate(`({ i: window.__startLang, text: document.getElementById("start-lang")?.textContent, href: document.getElementById("start-lang")?.getAttribute("href") })`);
+      const want = stable[r.i];
+      if (!want || r.text !== `start with ${want.name}` || r.href !== `/${want.id}`) consistent = false;
+      seen.add(r.text);
+    }
+    check("home: random stable start language, kept through hydration", consistent && seen.size > 1, [...seen].join(", "));
+  }
+
   // The UI: load the Go page with a share link, click Run, read the output pane.
   if (!only || only.includes("ui")) {
     const { encodeShare } = await import("../../app/lib/share.ts");

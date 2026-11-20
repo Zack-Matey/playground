@@ -4,6 +4,7 @@ import { SiCloudflare } from "react-icons/si";
 import { kodeMono } from "app/lib/fonts";
 import { LANGUAGES } from "app/lib/languages";
 import { LangIcon, WasmIcon } from "app/components/language-icons";
+import { StartButton } from "app/components/start-button";
 
 const POINTS = [
   { icon: <WasmIcon size={18} />, title: "Real toolchains in WebAssembly", text: "CPython, Clang, Go's gc compiler, rustc and javac, compiled to wasm. Not a server pretending to be your browser." },
@@ -27,9 +28,7 @@ export default function Home() {
           uploaded. No sign-up, no ads.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Link href="/python" className={`${kodeMono.className} btn-primary px-5 py-2.5 font-semibold`}>
-            start with Python
-          </Link>
+          <StartButton />
           <Link href="/about" className={`${kodeMono.className} tile px-5 py-2.5 font-semibold`}>
             how it works
           </Link>
