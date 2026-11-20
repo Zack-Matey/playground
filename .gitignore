@@ -29,5 +29,6 @@ next-env.d.ts
 # built and fetched by scripts/fetch-engines.mjs
 /public/engines/
 
-# Cloudflare
+# Cloudflare (r2-uploaded.json describes the deployer's own bucket)
 /.wrangler/
+/worker/r2-uploaded.json

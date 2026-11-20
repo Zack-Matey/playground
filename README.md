@@ -41,12 +41,14 @@ A static export, like zackmatey.com, with no server to run or pay for:
 - **Engines**: too big for static assets (25 MiB per file, and they compress 3-5x), so the build brotli-compresses them (quality 11) into `out-large/` and they live in an R2 bucket (`playground-engines`). `worker/index.ts` streams them back with `Content-Encoding: br` (`encodeBody: "manual"`), so it spends no CPU on them. Only `/engines/*` runs the Worker.
 - **Headers**: `out/_headers` gets the same headers as the dev server, from `config/security.ts`: the CSP, and COOP/COEP for cross-origin isolation (needed for SharedArrayBuffer, which the threaded Rust compiler uses).
 
-One-time setup (the `zackmatey.com` zone must be in the same Cloudflare account):
+One-time setup (the domain's zone must be in the same Cloudflare account):
 
 ```sh
 npx wrangler login
 npx wrangler r2 bucket create playground-engines
 ```
+
+To deploy your own copy, set your hostname in `routes` and your bucket in `bucket_name` in `wrangler.jsonc` (the deploy script reads the bucket from there), and create that bucket. Also change the site name and URL in `app/lib/site.ts`, and the name in the header, footer and About page: the name and branding are mine, and only the code is licensed. The AGPL also requires a public deployment to offer its visitors the source of the version it runs, so point the footer's source link at your fork.
 
 Then each deploy:
 
@@ -54,7 +56,7 @@ Then each deploy:
 npm run cf:deploy    # build to out/, upload new/changed engine files to R2, wrangler deploy
 ```
 
-`worker/r2-uploaded.json` records what's in the bucket (by SHA-256), so unchanged engines aren't recompressed or re-uploaded. Commit it after deploys. The first upload sends ~430 files one `wrangler r2 object put` at a time, which takes a while; later deploys only send what changed (engine paths are versioned, so a new version is new files).
+`worker/r2-uploaded.json` records what's in the bucket (by SHA-256), so unchanged engines aren't recompressed or re-uploaded. It's git-ignored, since it describes your bucket: on a new machine (or a fork) it starts empty and every engine file is sent once. The first upload sends ~430 files one `wrangler r2 object put` at a time, which takes a while; later deploys only send what changed (engine paths are versioned, so a new version is new files).
 
 To try the Cloudflare build locally first: `npm run cf:dev` (`wrangler dev` with a local R2 copy) at http://localhost:8787.
 
@@ -92,3 +94,11 @@ In the Cloudflare dashboard, keep features that inject scripts switched off for 
 - **Linking Rust without subprocesses.** rustc can't spawn a linker under WASI, so it runs with `--print link-args -C save-temps`, and we hand that exact command to wasm-ld from the Clang engine. This rustc is built with `panic=abort`, so it ends a failed compile by trapping after printing its errors; the runner treats that as exit 1.
 - **Java without eval.** TeaVM's own JS glue builds its interop helpers with `new Function`, which the CSP forbids, so `app/run/langs/teavm.ts` is a port of it that uses closures instead. The one real use of JS source, `@JSBody`, is resolved from a fixed table of the snippets the compiler and TeaVM's class library contain; any other snippet (a user's own `@JSBody`) is refused, so Java programs only ever run as WebAssembly. A generated launcher wraps `main` so uncaught exceptions print as the JVM prints them. Known gaps in this TeaVM build: no stdin, no `System.exit`, floating-point formatting (`%f`, `DecimalFormat`) fails, and null/bounds/zero-division errors are WebAssembly traps that Java can't catch. `node scripts/dev/teavm-probe.mjs File.java` drives the engine from Node.
 - **Engines are immutable per version**, so they're cached forever by browsers and the service worker, and a version bump is just a new folder.
+
+## Contributing
+
+This is a personal project that I maintain in my spare time. Issues and pull requests are welcome, but I can't promise to respond quickly, or to accept every change: features that add a server, tracking, or a heavy engine for a niche case are unlikely to land. For anything big, open an issue first. Bug reports with a share link (the "Copy a share link" button) that reproduces the problem are the most useful.
+
+## License
+
+The code is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only). If you run a modified version where others can use it, you must offer them its source. The engines the site downloads, the Geist fonts, the Devicon Java logo and the ported TeaVM runtime have their own licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [NOTICE](NOTICE). My name and the zackmatey.com branding aren't covered by the license.

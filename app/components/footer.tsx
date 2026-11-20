@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { SITE } from "app/lib/site";
 
 function ThemeCycle() {
   const { theme, setTheme } = useTheme();
@@ -27,6 +28,9 @@ export function Footer() {
         <Link href="/about" className="hover:text-accent-500">
           how it works
         </Link>
+        <a href={SITE.source} className="hover:text-accent-500">
+          source (AGPL-3.0)
+        </a>
         <a href="https://zackmatey.com" className="hover:text-accent-500">
           zackmatey.com
         </a>

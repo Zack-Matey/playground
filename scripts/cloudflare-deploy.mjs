@@ -1,7 +1,8 @@
 // Deploy to Cloudflare (run scripts/cloudflare-build.mjs first; `npm run cf:deploy` does both).
 //   node scripts/cloudflare-deploy.mjs [--local]
 // Uploads the compressed engine files in out-large/ to the R2 bucket, then runs `wrangler deploy`.
-// worker/r2-uploaded.json records the SHA-256 of what's in the bucket (commit it), so unchanged engines aren't re-sent.
+// worker/r2-uploaded.json (git-ignored: it describes your bucket) records the SHA-256 of what's in the bucket, so unchanged
+// engines aren't re-sent. Without it, every engine file is uploaded. The bucket is the one named in wrangler.jsonc.
 // --local fills wrangler's local R2 instead and skips the deploy, for testing with `npx wrangler dev`.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -9,7 +10,7 @@ import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
 const local = process.argv.includes("--local");
-const BUCKET = "playground-engines";
+const BUCKET = /"bucket_name":\s*"([^"]+)"/.exec(readFileSync(path.join(root, "wrangler.jsonc"), "utf8"))[1];
 const wrangler = (args) => execFileSync(process.execPath, [path.join(root, "node_modules/wrangler/bin/wrangler.js"), ...args], { cwd: root, stdio: "inherit" });
 
 const files = JSON.parse(readFileSync(path.join(root, "worker/engines.json"), "utf8"));

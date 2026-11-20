@@ -4,7 +4,7 @@
 // 2. Writes out/_headers with the same security headers the dev server sends (config/security.ts), including the
 //    COOP/COEP pair that makes the site cross-origin isolated.
 // 3. Moves out/engines/ out of the static assets: every engine file is listed in worker/engines.json (path, type,
-//    SHA-256) and, unless that exact file is already in R2 (worker/r2-uploaded.json), brotli-compressed into
+//    SHA-256) and, unless that exact file is already in R2 (worker/r2-uploaded.json, kept by the deploy script), brotli-compressed into
 //    out-large/ for scripts/cloudflare-deploy.mjs to upload. --local compresses everything (for wrangler dev's local R2).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";

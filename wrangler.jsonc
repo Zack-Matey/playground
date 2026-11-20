@@ -1,4 +1,4 @@
-// Cloudflare deploy for playground.zackmatey.com: a static export (out/) on Workers static assets, plus a small Worker
+// Cloudflare deploy for playground.zackmatey.com (to deploy your own copy, change "routes" and "bucket_name"): a static export (out/) on Workers static assets, plus a small Worker
 // (worker/index.ts) that serves the language engines from R2, pre-compressed with brotli. No request ever runs user
 // code on a server: programs run in the visitor's browser. Build: npm run cf:build. Deploy: npm run cf:deploy.
 {

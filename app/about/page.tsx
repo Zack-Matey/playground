@@ -4,6 +4,7 @@ import { kodeMono } from "app/lib/fonts";
 import { LANGUAGES, type LangId } from "app/lib/languages";
 import { LangIcon, WasmIcon } from "app/components/language-icons";
 import { ENGINES } from "config/engines";
+import { SITE } from "app/lib/site";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -130,6 +131,13 @@ export default function Page() {
           .map((e) => e.label)
           .join(" · ")}
         .
+      </p>
+      <p>
+        The playground&apos;s own code is open source under the GNU AGPL v3:{" "}
+        <a href={SITE.source} className="underline decoration-accent-500 underline-offset-2 hover:text-accent-500">
+          source on GitHub
+        </a>
+        . Each engine above keeps its own license.
       </p>
       <p>
         Part of{" "}
